@@ -65,6 +65,9 @@ def main():
     url = AppKit.NSURL.URLWithString_('about:blank').retain()
     webview.mainFrame().loadHTMLString_baseURL_("Hello world!", url)
 
+    from console import setup_repl
+    setup_repl(webview)
+
     AppHelper.runEventLoop() # or maybe `app.run()`
 
 if __name__ == '__main__':
