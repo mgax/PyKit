@@ -38,10 +38,6 @@ def main_thread(func, *args, **kwargs):
 #
 #    return wrapper
 
-def webinit(webview):
-    dom_doc = webview.mainFrameDocument()
-    print dom_doc
-
 class WindowDelegate(Foundation.NSObject):
     def windowWillClose_(self, notification):
         AppKit.NSApp.terminate_(self)
@@ -49,20 +45,26 @@ class WindowDelegate(Foundation.NSObject):
 def main():
     app = AppKit.NSApplication.sharedApplication()
 
+    window = AppKit.NSWindow.alloc()
     mask = ( AppKit.NSTitledWindowMask |
              AppKit.NSClosableWindowMask |
              AppKit.NSMiniaturizableWindowMask |
              AppKit.NSResizableWindowMask )
-    w = AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+    window = window.initWithContentRect_styleMask_backing_defer_(
             Foundation.NSMakeRect(13, 13, 400, 400),
             mask,
             AppKit.NSBackingStoreBuffered,
             False)
+
     webview = WebKit.WebView.alloc().init()
-    main_thread(lambda: webinit(webview))
-    w.setContentView_(webview)
-    w.setDelegate_(WindowDelegate.alloc().init().retain())
-    w.makeKeyAndOrderFront_(app)
+    window.setContentView_(webview)
+
+    window.setDelegate_(WindowDelegate.alloc().init().retain())
+    window.makeKeyAndOrderFront_(app)
+
+    url = AppKit.NSURL.URLWithString_('about:blank').retain()
+    webview.mainFrame().loadHTMLString_baseURL_("Hello world!", url)
+
     AppHelper.runEventLoop() # or maybe `app.run()`
 
 if __name__ == '__main__':
