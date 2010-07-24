@@ -18,7 +18,7 @@ def main():
              AppKit.NSMiniaturizableWindowMask |
              AppKit.NSResizableWindowMask )
     window = window.initWithContentRect_styleMask_backing_defer_(
-            Foundation.NSMakeRect(13, 13, 400, 400),
+            Foundation.NSMakeRect(900, 20, 400, 400),
             mask,
             AppKit.NSBackingStoreBuffered,
             False)
@@ -35,18 +35,12 @@ def main():
     from console import setup_repl
     setup_repl(webview)
 
+    demo_coroutine()
+
     AppHelper.runEventLoop() # or maybe `app.run()`
 
 from monocle import _o
-
-@_o
-def other_coroutine():
-    print "coroutine start"
-    import monocle.util
-    yield monocle.util.sleep(3)
-    print "coroutine continue"
-    yield 13
-    print "coroutine done"
+import monocle.util
 
 def setup_monocle():
     def not_implemented(*args, **kwargs):
@@ -58,6 +52,18 @@ def setup_monocle():
     monocle.stack.eventloop.queue_task = AppHelper.callLater
     monocle.stack.eventloop.run = not_implemented
     monocle.stack.eventloop.halt = not_implemented
+
+class MyEventHandler(Foundation.NSObject):
+    def handleEvent_(self, event):
+        print "handling teh event"
+        print event.x(), event.y()
+
+@_o
+def demo_coroutine():
+    yield monocle.util.sleep(1)
+    doc = webview.mainFrameDocument()
+    body = doc.firstChild().firstChild().nextSibling()
+    body.addEventListener___("click", MyEventHandler.alloc().init(), False)
 
 
 if __name__ == '__main__':
