@@ -54,7 +54,7 @@ from monocle import _o
 from monocle.deferred import Deferred
 from monocle.experimental import Channel
 
-def setup_repl(webview):
+def setup_repl(locals):
     line_input = Channel(10)
 
     def quit():
@@ -74,17 +74,12 @@ def setup_repl(webview):
     FileObserver.alloc().initWithFileDescriptor_readCallback_errorCallback_(
         sys.stdin.fileno(), handle_line, handle_error).retain()
 
-    env = {
-        'W': webview,
-        '__name__': '__console__',
-        '__doc__': None,
-    }
     global x
-    x = repl(env, line_input.wait)
+    x = repl(locals, line_input.wait)
 
 @_o
-def repl(env, read_line):
-    console = code.InteractiveConsole(env)
+def repl(locals, read_line):
+    console = code.InteractiveConsole(locals)
 
     def prompt(cont=False):
         sys.stdout.write("=.. " if cont else "=>> ")
