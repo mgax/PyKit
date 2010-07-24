@@ -37,5 +37,33 @@ def main():
 
     AppHelper.runEventLoop() # or maybe `app.run()`
 
+from monocle import _o
+
+@_o
+def other_coroutine():
+    print "coroutine start"
+    import monocle.util
+    yield monocle.util.sleep(3)
+    print "coroutine continue"
+    yield 13
+    print "coroutine done"
+
+def setup_monocle():
+    def not_implemented(*args, **kwargs):
+        print "NOT IMPLEMENTED!"
+        raise NotImplementedError
+
+    import monocle.stack.eventloop
+
+    monocle.stack.eventloop.queue_task = AppHelper.callLater
+    monocle.stack.eventloop.run = not_implemented
+    monocle.stack.eventloop.halt = not_implemented
+
+    def prnt(result):
+        print ":)"
+    other_coroutine().add_callback(prnt)
+
+
 if __name__ == '__main__':
+    setup_monocle()
     main()
