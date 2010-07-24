@@ -59,10 +59,6 @@ def setup_monocle():
     monocle.stack.eventloop.run = not_implemented
     monocle.stack.eventloop.halt = not_implemented
 
-    def prnt(result):
-        print ":)"
-    other_coroutine().add_callback(prnt)
-
 
 if __name__ == '__main__':
     setup_monocle()

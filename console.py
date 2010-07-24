@@ -49,35 +49,51 @@ class FileObserver(NSObject):
         # matter, but it's worth pointing out.
         self.close()
 
-def setup_repl(webview):
-    import sys
-    import code
+import code
+from monocle import _o
+from monocle.deferred import Deferred
+from monocle.experimental import Channel
 
-    console = code.InteractiveConsole({
+def setup_repl(webview):
+    line_input = Channel(10)
+
+    def quit():
+        sys.stdout.write("bye!\n")
+        sys.stdout.flush()
+        import AppKit
+        AppKit.NSApp.terminate_(AppKit.NSApp)
+
+    def handle_line(observer, data):
+        if not data:
+            return quit()
+        line_input.fire(data)
+
+    def handle_error(err):
+        sys.stdout.write("error!\n")
+
+    FileObserver.alloc().initWithFileDescriptor_readCallback_errorCallback_(
+        sys.stdin.fileno(), handle_line, handle_error).retain()
+
+    env = {
         'W': webview,
         '__name__': '__console__',
         '__doc__': None,
-    })
+    }
+    global x
+    x = repl(env, line_input.wait)
+
+@_o
+def repl(env, read_line):
+    console = code.InteractiveConsole(env)
 
     def prompt(cont=False):
         sys.stdout.write("=.. " if cont else "=>> ")
         sys.stdout.flush()
 
-    def handle_line(observer, data):
-        if not data:
-            sys.stdout.write("bye!\n")
-            sys.stdout.flush()
-            import AppKit
-            AppKit.NSApp.terminate_(AppKit.NSApp)
-            return
-        assert data.endswith('\n')
-        cont = console.push(data[:-1])
+    cont = False
+    while True:
         prompt(cont)
-
-    def handle_error(err):
-        sys.stdout.write("error!\n")
-
-    observer = FileObserver.alloc()
-    observer = observer.initWithFileDescriptor_readCallback_errorCallback_(
-        sys.stdin.fileno(), handle_line, handle_error).retain()
-    prompt()
+        data = yield read_line()
+        assert data.endswith('\n')
+        line = data[:-1]
+        cont = console.push(line)
