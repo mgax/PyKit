@@ -1,16 +1,13 @@
 from contextlib import contextmanager
 
-from monocle import _o, launch
-from monocle.deferred import Deferred
+from monocle import _o
 
-import objc
 import Foundation
 import AppKit
 import WebKit
-
 from PyObjCTools import AppHelper
 
-def _setup_monocle():
+def setup_monocle():
     def not_implemented(*args, **kwargs):
         print "NOT IMPLEMENTED!"
         raise NotImplementedError
@@ -20,7 +17,7 @@ def _setup_monocle():
     monocle.stack.eventloop.halt = not_implemented
 
 def init():
-    _setup_monocle()
+    setup_monocle()
     AppKit.NSApplication.sharedApplication()
 
 def terminate():
@@ -55,7 +52,7 @@ class WebKitWindow(object):
         return self.webview.mainFrameDocument()
 
 @_o
-def create_window(rect):
+def create_window(rect=(900, 20, 400, 400)):
     w = WebKitWindow()
     w._set_up_window(rect)
 
@@ -67,22 +64,10 @@ def create_window(rect):
 
     yield w # return
 
-def cocoa_app_loop(console=False):
-    if console is not False:
-        assert type(console) is dict
-        from console import setup_repl
-        setup_repl(locals=console)
-
+def app_loop():
     AppHelper.runEventLoop()
 
-def pykit_demo():
-    init()
-    launch(demo_coroutine())
-    env = {'__name__': '__console__', '__doc__': None}
-    cocoa_app_loop(console=env)
-
-
-class MyEventHandler(Foundation.NSObject):
+class EventHandlerWrapper(Foundation.NSObject):
     @classmethod
     def handlerWithCallback_(cls, callback):
         self = cls.alloc().init()
@@ -93,17 +78,11 @@ class MyEventHandler(Foundation.NSObject):
         self._callback(event)
 
 def add_event_listener(node, event_name, callback, capture=False):
-    handler = MyEventHandler.handlerWithCallback_(callback)
+    handler = EventHandlerWrapper.handlerWithCallback_(callback)
     node.addEventListener___(event_name, handler, capture)
 
-@_o
-def demo_coroutine():
-    wkw = yield create_window(rect=(900, 20, 400, 400))
-    body = wkw.dom.firstChild().firstChild().nextSibling()
-    def say_hello(evt):
-        print "HELLO!"
-    add_event_listener(body, "click", say_hello)
-
-
-if __name__ == '__main__':
-    pykit_demo()
+@contextmanager
+def simple_app():
+    init()
+    yield
+    app_loop()

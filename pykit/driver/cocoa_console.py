@@ -49,12 +49,9 @@ class FileObserver(NSObject):
         # matter, but it's worth pointing out.
         self.close()
 
-import code
-from monocle import _o
-from monocle.deferred import Deferred
-from monocle.experimental import Channel
+def setup_input():
+    from monocle.experimental import Channel
 
-def setup_repl(locals):
     line_input = Channel(10)
 
     def quit():
@@ -74,11 +71,15 @@ def setup_repl(locals):
     FileObserver.alloc().initWithFileDescriptor_readCallback_errorCallback_(
         sys.stdin.fileno(), handle_line, handle_error).retain()
 
-    global x
-    x = repl(locals, line_input.wait)
+    return line_input.wait
+
+from monocle import _o
 
 @_o
-def repl(locals, read_line):
+def repl(locals):
+    import code
+
+    read_line = setup_input()
     console = code.InteractiveConsole(locals)
 
     def prompt(cont=False):
