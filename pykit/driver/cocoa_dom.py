@@ -36,17 +36,18 @@ class ScriptWrapper(object):
         assert isinstance(obj, WebKit.WebScriptObject)
         self._obj = obj
 
-    def eval(self, javascript_src):
-        value = self._obj.evaluateWebScript_(javascript_src)
+    def wrap_if_needed(self, value):
         if isinstance(value, WebKit.WebScriptObject):
             value = ScriptWrapper(value, self._insider)
         return value
 
+    def eval(self, javascript_src):
+        value = self._obj.evaluateWebScript_(javascript_src)
+        return self.wrap_if_needed(value)
+
     def __getitem__(self, key):
         value = self._obj.valueForKey_(key)
-        if isinstance(value, WebKit.WebScriptObject):
-            value = ScriptWrapper(value, self._insider)
-        return value
+        return self.wrap_if_needed(value)
 
     def __getattr__(self, key):
         value = self[key]
@@ -63,9 +64,7 @@ class ScriptMethodWrapper(object):
     def __call__(self, *args):
         _call_with = self.obj_wrapper._obj.callWebScriptMethod_withArguments_
         value = _call_with(self.method_name, args)
-        if isinstance(value, WebKit.WebScriptObject):
-            value = ScriptWrapper(value, self.obj_wrapper._insider)
-        return value
+        return self.obj_wrapper.wrap_if_needed(value)
 
 INSIDER_JS = "({ type_of: function(value) { return typeof(value); } });"
 
