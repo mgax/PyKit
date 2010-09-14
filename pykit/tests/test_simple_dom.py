@@ -23,4 +23,12 @@ def test_javascript(window):
                         'pykittest_dict')
     assert dic['a'] == 13 and dic['b']['c'] == 22
 
-all_tests = [test_dom_behaviour, test_javascript]
+    func = window.script('var pykittest_func = function(n) { return n+3; }; '
+                         'pykittest_func')
+
+@_o
+def test_javascript_methods(window):
+    window.script('var pykittest_callback = function(n) { return n + 6; };')
+    assert window.script.pykittest_callback(10) == 16
+
+all_tests = [test_dom_behaviour, test_javascript, test_javascript_methods]
