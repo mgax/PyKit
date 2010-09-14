@@ -7,6 +7,8 @@ import AppKit
 import WebKit
 from PyObjCTools import AppHelper
 
+from cocoa_dom import DomNodeWrapper
+
 def setup_monocle():
     def not_implemented(*args, **kwargs):
         print "NOT IMPLEMENTED!"
@@ -47,9 +49,12 @@ class WebKitWindow(object):
         self.window = window.retain()
         self.webview = webview.retain()
 
+    def is_ready(self):
+        return bool(self.webview.mainFrameDocument() is not None)
+
     @property
     def dom(self):
-        return self.webview.mainFrameDocument()
+        return DomNodeWrapper(self.webview.mainFrameDocument())
 
 @_o
 def create_window(rect=(900, 20, 400, 400)):
@@ -57,9 +62,7 @@ def create_window(rect=(900, 20, 400, 400)):
     w._set_up_window(rect)
 
     import monocle.util
-    while True:
-        if w.dom is not None:
-            break
+    while not w.is_ready():
         yield monocle.util.sleep(.1)
 
     yield w # return
