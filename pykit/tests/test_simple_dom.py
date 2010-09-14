@@ -31,4 +31,19 @@ def test_javascript_methods(ctx):
     ctx.window.eval('var pykittest_callback = function(n) { return n + 6; };')
     assert ctx.window.pykittest_callback(10) == 16
 
+    calls = []
+    @ctx.window._callback
+    def call_to_python(this, *args):
+        calls.append( (this, args) )
+    ctx.window.eval('var call_me_back = function(f) {\n'
+                    '    f(); f(1, 3);\n'
+                    '    var ob = {f: f, n: 13}; ob.f(); ob.f("asdf");\n'
+                    '};')
+    ctx.window.call_me_back(call_to_python)
+    assert len(calls) == 4
+    assert calls[0][0]._obj is ctx.window._obj
+    assert calls[1][1] == (1, 3)
+    assert calls[2][0]['n'] == 13
+    assert calls[3][1] == ("asdf",)
+
 all_tests = [test_dom_behaviour, test_javascript, test_javascript_methods]
