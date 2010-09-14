@@ -36,7 +36,7 @@ class ScriptWrapper(object):
         assert isinstance(obj, WebKit.WebScriptObject)
         self._obj = obj
 
-    def __call__(self, javascript_src):
+    def eval(self, javascript_src):
         value = self._obj.evaluateWebScript_(javascript_src)
         if isinstance(value, WebKit.WebScriptObject):
             value = ScriptWrapper(value, self._insider)
