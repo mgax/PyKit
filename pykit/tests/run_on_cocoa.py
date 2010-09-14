@@ -8,14 +8,13 @@ from pykit.driver.cocoa import simple_app, create_window, terminate
 @_o
 def run_tests():
     window = yield create_window()
-    document = window.dom
 
     import test_simple_dom
     count = 0
     tracebacks = []
     for dom_test in test_simple_dom.all_tests:
         try:
-            yield dom_test(document)
+            yield dom_test(window)
         except Exception, e:
             print "E",
             tracebacks.append(monocle.core.format_tb(e))

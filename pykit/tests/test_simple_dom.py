@@ -2,8 +2,8 @@ from monocle import _o
 import monocle.util
 
 @_o
-def test_dom_behaviour(document):
-    body = document.firstChild.firstChild.nextSibling
+def test_dom_behaviour(window):
+    body = window.dom.firstChild.firstChild.nextSibling
     body.innerHTML = "<div>hello <em>world!</em></div>"
     yield monocle.util.sleep(.5)
     div = body.firstChild
@@ -11,4 +11,12 @@ def test_dom_behaviour(document):
     assert div.innerText == "hello world!"
     assert div.innerHTML == "hello <em>world!</em>"
 
-all_tests = [test_dom_behaviour]
+@_o
+def test_javascript(window):
+    assert window.script('1+1') == 2
+    assert window.script('var c = 33; window.c - 20;') == 13
+
+    window.script('document.firstChild.innerHTML = "asdf";')
+    assert window.dom.firstChild.innerHTML == "asdf"
+
+all_tests = [test_dom_behaviour, test_javascript]

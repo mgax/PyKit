@@ -7,7 +7,7 @@ import AppKit
 import WebKit
 from PyObjCTools import AppHelper
 
-from cocoa_dom import DomNodeWrapper
+from cocoa_dom import DomNodeWrapper, ScriptWrapper
 
 def setup_monocle():
     def not_implemented(*args, **kwargs):
@@ -51,6 +51,10 @@ class WebKitWindow(object):
 
     def is_ready(self):
         return bool(self.webview.mainFrameDocument() is not None)
+
+    @property
+    def script(self):
+        return ScriptWrapper(self.webview.windowScriptObject())
 
     @property
     def dom(self):

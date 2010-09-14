@@ -25,3 +25,11 @@ class DomNodeWrapper(object):
 for name in ['firstChild', 'nextSibling', 'innerHTML', 'innerText',
              'nodeName']:
     setattr(DomNodeWrapper, name, cocoa_dom_property(name))
+
+
+class ScriptWrapper(object):
+    def __init__(self, script):
+        self._s = script
+
+    def __call__(self, javascript_src):
+        return self._s.evaluateWebScript_(javascript_src)
