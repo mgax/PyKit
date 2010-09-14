@@ -1,28 +1,27 @@
+import WebKit
+
+def cocoa_dom_property(name):
+    def getter(self):
+        value = getattr(self._w, name)()
+        if isinstance(value, WebKit.DOMNode):
+            value = DomNodeWrapper(value)
+        return value
+
+    def setter(self, value):
+        if isinstance(value, DomNodeWrapper):
+            value = value._w
+        method_name = 'set' + name[0].upper() + name[1:] + '_'
+        getattr(self._w, method_name)(value)
+
+    getter.func_name = name
+    setter.func_name = name
+    return property(getter, setter)
+
 class DomNodeWrapper(object):
     def __init__(self, wrapped):
         assert wrapped is not None
         self._w = wrapped
 
-    @property
-    def firstChild(self):
-        return DomNodeWrapper(self._w.firstChild())
-
-    @property
-    def nextSibling(self):
-        return DomNodeWrapper(self._w.nextSibling())
-
-    @property
-    def innerHTML(self):
-        return self._w.innerHTML()
-
-    @innerHTML.setter
-    def innerHTML(self, value):
-        return self._w.setInnerHTML_(value)
-
-    @property
-    def innerText(self):
-        return self._w.innerText()
-
-    @property
-    def nodeName(self):
-        return self._w.nodeName()
+for name in ['firstChild', 'nextSibling', 'innerHTML', 'innerText',
+             'nodeName']:
+    setattr(DomNodeWrapper, name, cocoa_dom_property(name))
