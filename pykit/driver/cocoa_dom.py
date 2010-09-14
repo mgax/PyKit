@@ -29,28 +29,28 @@ del name
 
 
 class ScriptWrapper(object):
-    def __init__(self, script, insider=None):
+    def __init__(self, obj, insider=None):
         if insider is None:
-            insider = JsInsider(script)
+            insider = JsInsider(obj)
         self._insider = insider
-        assert isinstance(script, WebKit.WebScriptObject)
-        self._s = script
+        assert isinstance(obj, WebKit.WebScriptObject)
+        self._obj = obj
 
     def __call__(self, javascript_src):
-        value = self._s.evaluateWebScript_(javascript_src)
+        value = self._obj.evaluateWebScript_(javascript_src)
         if isinstance(value, WebKit.WebScriptObject):
             value = ScriptWrapper(value, self._insider)
         return value
 
     def __getitem__(self, key):
-        value = self._s.valueForKey_(key)
+        value = self._obj.valueForKey_(key)
         if isinstance(value, WebKit.WebScriptObject):
             value = ScriptWrapper(value, self._insider)
         return value
 
     def __getattr__(self, key):
         value = self[key]
-        ty = self._insider.type_of(value._s)
+        ty = self._insider.type_of(value._obj)
         assert ty == 'function', ("%r is of type %r instead of %r" %
                                   (value, ty, "function"))
         return ScriptMethodWrapper(self, key)
@@ -61,8 +61,8 @@ class ScriptMethodWrapper(object):
         self.method_name = method_name
 
     def __call__(self, *args):
-        perform_call = self.obj_wrapper._s.callWebScriptMethod_withArguments_
-        value = perform_call(self.method_name, args)
+        _call_with = self.obj_wrapper._obj.callWebScriptMethod_withArguments_
+        value = _call_with(self.method_name, args)
         if isinstance(value, WebKit.WebScriptObject):
             value = ScriptWrapper(value, self.obj_wrapper._insider)
         return value
@@ -70,9 +70,8 @@ class ScriptMethodWrapper(object):
 INSIDER_JS = "({ type_of: function(value) { return typeof(value); } });"
 
 class JsInsider(object):
-    def __init__(self, script):
-        self._js_obj = script.evaluateWebScript_(INSIDER_JS)
+    def __init__(self, obj):
+        self._obj = obj.evaluateWebScript_(INSIDER_JS)
 
     def type_of(self, value):
-        return self._js_obj.callWebScriptMethod_withArguments_('type_of',
-                                                               [value])
+        return self._obj.callWebScriptMethod_withArguments_('type_of', [value])

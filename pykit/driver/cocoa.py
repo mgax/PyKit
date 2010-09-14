@@ -32,32 +32,32 @@ class WebKitWindow(object):
                  AppKit.NSClosableWindowMask |
                  AppKit.NSMiniaturizableWindowMask |
                  AppKit.NSResizableWindowMask )
-        window = AppKit.NSWindow.alloc()
-        window = window.initWithContentRect_styleMask_backing_defer_(
+        ns_window = AppKit.NSWindow.alloc()
+        ns_window = ns_window.initWithContentRect_styleMask_backing_defer_(
                 Foundation.NSMakeRect(*rect),
                 mask,
                 AppKit.NSBackingStoreBuffered,
                 False)
 
         webview = WebKit.WebView.alloc().init()
-        window.setContentView_(webview)
-        window.makeKeyAndOrderFront_(AppKit.NSApp)
+        ns_window.setContentView_(webview)
+        ns_window.makeKeyAndOrderFront_(AppKit.NSApp)
 
         url = AppKit.NSURL.URLWithString_('about:blank').retain()
         webview.mainFrame().loadHTMLString_baseURL_("hello world", url)
 
-        self.window = window.retain()
+        self.ns_window = ns_window.retain()
         self.webview = webview.retain()
 
     def is_ready(self):
         return bool(self.webview.mainFrameDocument() is not None)
 
     @property
-    def script(self):
+    def window(self):
         return ScriptWrapper(self.webview.windowScriptObject())
 
     @property
-    def dom(self):
+    def document(self):
         return DomNodeWrapper(self.webview.mainFrameDocument())
 
 @_o
