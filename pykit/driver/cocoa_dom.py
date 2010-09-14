@@ -19,7 +19,7 @@ def cocoa_dom_property(name):
 
 class DomNodeWrapper(object):
     def __init__(self, wrapped):
-        assert wrapped is not None
+        assert isinstance(wrapped, WebKit.DOMNode)
         self._w = wrapped
 
 for name in ['firstChild', 'nextSibling', 'innerHTML', 'innerText',
@@ -29,7 +29,17 @@ for name in ['firstChild', 'nextSibling', 'innerHTML', 'innerText',
 
 class ScriptWrapper(object):
     def __init__(self, script):
+        assert isinstance(script, WebKit.WebScriptObject)
         self._s = script
 
     def __call__(self, javascript_src):
-        return self._s.evaluateWebScript_(javascript_src)
+        value = self._s.evaluateWebScript_(javascript_src)
+        if isinstance(value, WebKit.WebScriptObject):
+            value = ScriptWrapper(value)
+        return value
+
+    def __getitem__(self, key):
+        value = self._s.valueForKey_(key)
+        if isinstance(value, WebKit.WebScriptObject):
+            value = ScriptWrapper(value)
+        return value

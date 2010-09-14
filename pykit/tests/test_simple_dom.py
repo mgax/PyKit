@@ -19,4 +19,8 @@ def test_javascript(window):
     window.script('document.firstChild.innerHTML = "asdf";')
     assert window.dom.firstChild.innerHTML == "asdf"
 
+    dic = window.script('var pykittest_dict = {a: 13, b: {c: 22}}; '
+                        'pykittest_dict')
+    assert dic['a'] == 13 and dic['b']['c'] == 22
+
 all_tests = [test_dom_behaviour, test_javascript]
