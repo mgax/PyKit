@@ -49,6 +49,9 @@ class ScriptWrapper(object):
         value = self._obj.valueForKey_(key)
         return self.wrap_if_needed(value)
 
+    def __setitem__(self, key, value):
+        self._obj.setValue_forKey_(value, key)
+
     def __getattr__(self, key):
         value = self[key]
         ty = self._insider('type_of', value._obj)

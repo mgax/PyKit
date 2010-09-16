@@ -23,6 +23,9 @@ def test_javascript(ctx):
                           'pykittest_dict')
     assert dic['a'] == 13 and dic['b']['c'] == 22
 
+    dic['a'] = 25
+    assert ctx.window.eval('pykittest_dict.a') == 25
+
     func = ctx.window.eval('var pykittest_func = function(n) { return n+3; }; '
                            'pykittest_func')
 
