@@ -44,15 +44,6 @@ class ScriptWrapper(object):
             value = ScriptWrapper(value, self._insider)
         return value
 
-    def eval(self, javascript_src):
-        ret = self._insider('eval', javascript_src)
-        is_exc = ret.valueForKey_('is_exc')
-        assert isinstance(is_exc, bool)
-        if is_exc:
-            raise ScriptException(ret.valueForKey_('exc'))
-        else:
-            return self.wrap_if_needed(ret.valueForKey_('out'))
-
     def __getitem__(self, key):
         value = self._obj.valueForKey_(key)
         return self.wrap_if_needed(value)
@@ -99,15 +90,6 @@ class ScriptMethodWrapper(object):
             return ctx.wrap_if_needed(ret.valueForKey_('out'))
 
 INSIDER_JS = """({
-    eval: function(src) {
-        try {
-            var out = eval(src);
-            if(out === undefined) out = null;
-            return {is_exc: false, out: out};
-        } catch(e) {
-            return {is_exc: true, exc: ""+e};
-        }
-    },
     type_of: function(value) { return typeof(value); },
     to_str: function(value) { return ""+value; },
     apply: function(ctx, func, args) {
