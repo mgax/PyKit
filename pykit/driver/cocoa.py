@@ -93,3 +93,24 @@ def simple_app():
     init()
     yield
     app_loop()
+
+def pykit_entry_point(func):
+    import sys
+    import monocle.core
+    from functools import wraps
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        @_o
+        def async():
+            try:
+                yield func(*args, **kwargs)
+            except Exception, e:
+                print>>sys.stderr, monocle.core.format_tb(e)
+            finally:
+                terminate()
+
+        with simple_app():
+            monocle.launch(async())
+
+    return wrapper
