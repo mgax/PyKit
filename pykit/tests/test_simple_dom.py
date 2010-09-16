@@ -84,6 +84,12 @@ def test_javascript_method_arguments(ctx):
         def __repr__(self): return "<:)>"
     assert_what(C(), 'object', '<:)>')
 
+    # auto-unwrap wrapped arguments
+    assert_what(what, 'function', ('function (arg) { return {type: '
+                                   'typeof(arg), str: ""+arg}; }') )
+
+    assert_what(ctx.window['document'], 'object', '[object HTMLDocument]')
+
 @_o
 def test_javascript_eval(ctx):
     ev = ctx.window.eval

@@ -80,9 +80,17 @@ class ScriptMethodWrapper(object):
         self.method_name = method_name
 
     def __call__(self, *args):
+        def unwrap(arg):
+            if isinstance(arg, ScriptWrapper):
+                return arg._obj
+            elif isinstance(arg, ScriptMethodWrapper):
+                return arg.obj_wrapper[arg.method_name]._obj
+            else:
+                return arg
+        unwrapped_args = map(unwrap, args)
         ctx = self.obj_wrapper
         func = ctx[self.method_name]._obj
-        ret = ctx._insider('apply', ctx._obj, func, args)
+        ret = ctx._insider('apply', ctx._obj, func, unwrapped_args)
         is_exc = ret.valueForKey_('is_exc')
         assert isinstance(is_exc, bool)
         if is_exc:
