@@ -80,9 +80,15 @@ class ScriptMethodWrapper(object):
         self.method_name = method_name
 
     def __call__(self, *args):
-        _call_with = self.obj_wrapper._obj.callWebScriptMethod_withArguments_
-        value = _call_with(self.method_name, args)
-        return self.obj_wrapper.wrap_if_needed(value)
+        ctx = self.obj_wrapper
+        func = ctx[self.method_name]._obj
+        ret = ctx._insider('apply', ctx._obj, func, args)
+        is_exc = ret.valueForKey_('is_exc')
+        assert isinstance(is_exc, bool)
+        if is_exc:
+            raise ScriptException(ret.valueForKey_('exc'))
+        else:
+            return ctx.wrap_if_needed(ret.valueForKey_('out'))
 
 INSIDER_JS = """({
     eval: function(src) {
@@ -96,6 +102,15 @@ INSIDER_JS = """({
     },
     type_of: function(value) { return typeof(value); },
     to_str: function(value) { return ""+value; },
+    apply: function(ctx, func, args) {
+        try {
+            var out = func.apply(ctx, args);
+            if(out === undefined) out = null;
+            return {is_exc: false, out: out};
+        } catch(e) {
+            return {is_exc: true, exc: ""+e};
+        }
+    },
     make_callback: function(wrapper) {
         var callback = function() {
             wrapper.calledWithContext_arguments_(this, arguments);

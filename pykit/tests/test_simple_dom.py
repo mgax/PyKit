@@ -52,6 +52,39 @@ def test_javascript_methods(ctx):
     assert calls[3][1] == ("asdf",)
 
 @_o
+def test_javascript_method_exceptions(ctx):
+    ctx.window.eval('window.crashme = function(){ something.non.existent; }')
+    try:
+        ctx.window.crashme()
+    except Exception, e:
+        from pykit.driver.cocoa_dom import ScriptException
+        assert isinstance(e, ScriptException)
+        assert e.args[0] == "ReferenceError: Can't find variable: something"
+    else:
+        assert False, "should raise exception"
+
+@_o
+def test_javascript_method_arguments(ctx):
+    ctx.window.eval('window.whatis = function(arg) { '
+                    'return {type: typeof(arg), str: ""+arg}; }')
+    what = ctx.window.whatis
+    def assert_what(value, js_type, js_str):
+        out = what(value)
+        assert out['type'] == js_type, "%r != %r" % (out['type'], js_type)
+        assert out['str'] == js_str, "%r != %r" % (out['str'], js_str)
+
+    assert_what(1, 'number', '1')
+    assert_what("asdf", 'string', 'asdf')
+    assert_what([1,2,"asdf"], 'object', '1,2,asdf')
+    assert_what({'a': 'b'}, 'object', '{\n    a = b;\n}')
+    assert_what(True, 'boolean', 'true')
+    assert_what(None, 'object', 'null')
+
+    class C(object):
+        def __repr__(self): return "<:)>"
+    assert_what(C(), 'object', '<:)>')
+
+@_o
 def test_javascript_eval(ctx):
     ev = ctx.window.eval
     assert ev('') is None
@@ -71,4 +104,5 @@ def test_javascript_eval(ctx):
         assert False, "should raise exception"
 
 all_tests = [test_dom_behaviour, test_javascript,
-             test_javascript_methods, test_javascript_eval]
+             test_javascript_methods, test_javascript_method_exceptions,
+             test_javascript_method_arguments, test_javascript_eval]
