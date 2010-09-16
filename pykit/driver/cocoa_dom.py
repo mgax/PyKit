@@ -28,6 +28,9 @@ for name in ['firstChild', 'nextSibling', 'innerHTML', 'innerText',
 del name
 
 
+class ScriptException(Exception):
+    pass
+
 class ScriptWrapper(object):
     def __init__(self, obj, insider=None):
         if insider is None:
@@ -42,8 +45,13 @@ class ScriptWrapper(object):
         return value
 
     def eval(self, javascript_src):
-        value = self._obj.evaluateWebScript_(javascript_src)
-        return self.wrap_if_needed(value)
+        ret = self._insider('eval', javascript_src)
+        is_exc = ret.valueForKey_('is_exc')
+        assert isinstance(is_exc, bool)
+        if is_exc:
+            raise ScriptException(ret.valueForKey_('exc'))
+        else:
+            return self.wrap_if_needed(ret.valueForKey_('out'))
 
     def __getitem__(self, key):
         value = self._obj.valueForKey_(key)
@@ -74,6 +82,15 @@ class ScriptMethodWrapper(object):
         return self.obj_wrapper.wrap_if_needed(value)
 
 INSIDER_JS = """({
+    eval: function(src) {
+        try {
+            var out = eval(src);
+            if(out === undefined) out = null;
+            return {is_exc: false, out: out};
+        } catch(e) {
+            return {is_exc: true, exc: ""+e};
+        }
+    },
     type_of: function(value) { return typeof(value); },
     make_callback: function(wrapper) {
         var callback = function() {
