@@ -29,6 +29,8 @@ def test_javascript(ctx):
     func = ctx.window.eval('window.pykittest_func = function(n){return n+3;}; '
                            'pykittest_func')
 
+    assert repr(ctx.window.eval('[4, 123]')) == '<JavaScript 4,123>'
+
 @_o
 def test_javascript_methods(ctx):
     ctx.window.eval('window.pykittest_callback = function(n){return n+6;};')

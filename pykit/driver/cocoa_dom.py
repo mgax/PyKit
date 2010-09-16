@@ -71,6 +71,9 @@ class ScriptWrapper(object):
         wrapper = CallbackWrapper.wrapperWithCallable_scriptWrapper(func, self)
         return self._insider('make_callback', wrapper)
 
+    def __repr__(self):
+        return "<JavaScript %s>" % (self._insider('to_str', self._obj),)
+
 class ScriptMethodWrapper(object):
     def __init__(self, obj_wrapper, method_name):
         self.obj_wrapper = obj_wrapper
@@ -92,6 +95,7 @@ INSIDER_JS = """({
         }
     },
     type_of: function(value) { return typeof(value); },
+    to_str: function(value) { return ""+value; },
     make_callback: function(wrapper) {
         var callback = function() {
             wrapper.calledWithContext_arguments_(this, arguments);
