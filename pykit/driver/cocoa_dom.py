@@ -1,4 +1,5 @@
 from collections import namedtuple
+
 import WebKit
 
 class ScriptException(Exception):
@@ -19,7 +20,8 @@ INSIDER_JS = """({
         var callback = function() {
             wrapper.calledWithContext_arguments_(this, arguments);
         };
-        return callback; }
+        return callback;
+    }
 });"""
 
 class ScriptBridge(object):
@@ -129,10 +131,7 @@ class JsMethod(WebKit.NSObject):
         self.func(wrap_js_objects(this, self.bridge), *py_args)
 
     def isSelectorExcludedFromWebScript_(self, selector):
-        if selector == 'calledWithContext:arguments:':
-            return False
-        else:
-            return True
+        return bool(selector != 'calledWithContext:arguments:')
 
 class js_function(object):
     """ decorate `func` to be callable from JavaScript """
