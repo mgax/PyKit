@@ -13,7 +13,7 @@ def say_hello(evt):
 @_o
 def demo_window(app):
     wkw = yield app.create_window()
-    body = wkw.document.firstChild.firstChild.nextSibling._w
+    body = wkw.window.document.firstChild.firstChild.nextSibling._obj
     add_event_listener(body, "click", say_hello)
 
 @exceptions_to_stderr

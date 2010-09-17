@@ -3,7 +3,7 @@ import monocle.util
 
 @_o
 def test_dom_behaviour(ctx):
-    body = ctx.document.firstChild.firstChild.nextSibling
+    body = ctx.window.document.firstChild.firstChild.nextSibling
     body.innerHTML = "<div>hello <em>world!</em></div>"
     yield monocle.util.sleep(.5)
     div = body.firstChild
@@ -17,7 +17,7 @@ def test_javascript(ctx):
     assert ctx.window.eval('var c = 33; c - 20;') == 13
 
     ctx.window.eval('document.firstChild.innerHTML = "asdf";')
-    assert ctx.document.firstChild.innerHTML == "asdf"
+    assert ctx.window.document.firstChild.innerHTML == "asdf"
 
     dic = ctx.window.eval('window.pykittest_dict = {a: 13, b: {c: 22}}; '
                           'pykittest_dict')

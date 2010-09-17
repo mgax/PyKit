@@ -10,7 +10,7 @@ import AppKit
 import WebKit
 from PyObjCTools import AppHelper
 
-from cocoa_dom import DomNodeWrapper, ScriptWrapper
+from cocoa_dom import ScriptWrapper
 
 def setup_monocle():
     def not_implemented(*args, **kwargs):
@@ -58,10 +58,6 @@ class WebKitWindow(object):
     @property
     def window(self):
         return ScriptWrapper(self.webview.windowScriptObject())
-
-    @property
-    def document(self):
-        return DomNodeWrapper(self.webview.mainFrameDocument())
 
 @_o
 def create_window(rect=(900, 20, 400, 400)):
