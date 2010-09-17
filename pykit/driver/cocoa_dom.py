@@ -35,9 +35,9 @@ class ScriptWrapper(object):
     def __init__(self, obj, insider=None):
         if insider is None:
             insider = JsInsider(obj)
-        self._insider = insider
+        self.__dict__['_insider'] = insider
         assert isinstance(obj, WebKit.WebScriptObject)
-        self._obj = obj
+        self.__dict__['_obj'] = obj
 
     def wrap_if_needed(self, value):
         if isinstance(value, WebKit.WebScriptObject):
@@ -51,12 +51,18 @@ class ScriptWrapper(object):
     def __setitem__(self, key, value):
         self._obj.setValue_forKey_(value, key)
 
+    def __setattr__(self, key, value):
+        self[key] = value
+
     def __getattr__(self, key):
-        value = self[key]
-        ty = self._insider('type_of', value._obj)
-        assert ty == 'function', ("%r is of type %r instead of %r" %
-                                  (value, ty, "function"))
-        return ScriptMethodWrapper(self, key)
+        try:
+            value = self[key]
+        except KeyError:
+            raise AttributeError(key)
+        if isinstance(value, ScriptWrapper):
+            if self._insider('type_of', value._obj) == 'function':
+                return ScriptMethodWrapper(self, key)
+        return value
 
     def _callback(self, func):
         wrapper = CallbackWrapper.wrapperWithCallable_scriptWrapper(func, self)

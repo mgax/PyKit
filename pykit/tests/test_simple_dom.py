@@ -32,6 +32,37 @@ def test_javascript(ctx):
     assert repr(ctx.window.eval('[4, 123]')) == '<JavaScript 4,123>'
 
 @_o
+def test_javascript_properties(ctx):
+    js_eval = ctx.window.eval
+    jsob = js_eval('({a: 4})')
+    assert repr(jsob) == "<JavaScript [object Object]>"
+    assert jsob['a'] == 4
+    try:
+        jsob['b']
+    except Exception, e:
+        assert type(e) is KeyError
+    else:
+        assert False, "should raise KeyError"
+
+    jsob['b'] = 3
+    assert jsob['b'] == 3
+    assert js_eval('({get_b:function(v){return v.b;}})').get_b(jsob) == 3
+
+    assert jsob.a == 4
+    assert jsob.b == 3
+
+    try:
+        jsob.c
+    except Exception, e:
+        assert type(e) is AttributeError
+    else:
+        assert False, "should raise AttributeError"
+
+    jsob.c = 13
+    assert jsob.c == 13
+    assert js_eval('({get_c:function(v){return v.c;}})').get_c(jsob) == 13
+
+@_o
 def test_javascript_methods(ctx):
     ctx.window.eval('window.pykittest_callback = function(n){return n+6;};')
     assert ctx.window.pykittest_callback(10) == 16
@@ -109,6 +140,6 @@ def test_javascript_eval(ctx):
     else:
         assert False, "should raise exception"
 
-all_tests = [test_dom_behaviour, test_javascript,
+all_tests = [test_dom_behaviour, test_javascript, test_javascript_properties,
              test_javascript_methods, test_javascript_method_exceptions,
              test_javascript_method_arguments, test_javascript_eval]
