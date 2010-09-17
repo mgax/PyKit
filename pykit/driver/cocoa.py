@@ -47,7 +47,7 @@ class WebKitWindow(object):
         ns_window.makeKeyAndOrderFront_(AppKit.NSApp)
 
         url = AppKit.NSURL.URLWithString_('about:blank').retain()
-        webview.mainFrame().loadHTMLString_baseURL_("hello world", url)
+        webview.mainFrame().loadHTMLString_baseURL_("", url)
 
         self.ns_window = ns_window.retain()
         self.webview = webview.retain()

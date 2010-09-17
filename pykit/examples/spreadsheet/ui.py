@@ -1,4 +1,5 @@
 from os import path
+from collections import namedtuple
 
 from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
 from pykit.driver.cocoa_dom import js_function
@@ -6,9 +7,23 @@ from pykit.driver.cocoa_dom import js_function
 import monocle.core
 from monocle import _o, launch
 
+Position = namedtuple('Position', 'x y')
+
 class Cell(object):
-    def __init__(self, jQ):
+    def __init__(self, position, jQ):
+        self.position = position
         self.ui = jQ('<td>hi!</td>')
+        self.ui.click(js_function(self.on_click))
+
+    def on_click(self, this, event):
+        print "clicked!", self.position, self.value
+
+    @property
+    def value(self):
+        return self.ui.text()
+
+def path_in_module(name):
+    return path.join(path.dirname(__file__), name)
 
 @exceptions_to_stderr
 @_o
@@ -23,16 +38,18 @@ def main_o(app):
     window['console'] = window.eval('({})')
     window['console']['log'] = console_log
 
-    jquery_path = path.join(path.dirname(__file__), 'jquery-1.4.2.min.js')
-    with open(jquery_path, 'rb') as f:
-        window.eval(f.read())
+    with open(path_in_module('jquery-1.4.2.min.js'), 'r') as jquery_src:
+        window.eval(jquery_src.read())
     jQ = window.jQuery
 
-    table = jQ('<table id="sheet">').appendTo(jQ("body"))
-    for i in range(3):
+    with open(path_in_module('style.css'), 'r') as style_css:
+        jQ('head').append("<style>" + style_css.read() + "</style>")
+
+    table = jQ('<table class="spreadsheet">').appendTo(jQ("body"))
+    for x in range(3):
         tr = jQ('<tr>').appendTo(table)
-        for j in range(3):
-            cell = Cell(jQ)
+        for y in range(3):
+            cell = Cell(Position(x, y), jQ)
             cell.ui.appendTo(tr)
 
     @js_function
