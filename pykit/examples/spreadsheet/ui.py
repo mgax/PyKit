@@ -1,6 +1,6 @@
 from os import path
 
-from pykit.driver.cocoa import pykit_entry_point, create_window
+from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
 
 import monocle.core
 from monocle import _o, launch
@@ -11,11 +11,11 @@ class Cell(object):
         div['innerHTML'] = "<td>hi!</td>"
         return div['firstChild']
 
-@pykit_entry_point
+@exceptions_to_stderr
 @_o
-def main():
+def main_o(app):
     import monocle.util
-    wkw = yield create_window()
+    wkw = yield app.create_window()
     window = wkw.window
 
     @window._callback
@@ -47,6 +47,12 @@ def main():
 
     wait_to_quit = monocle.core.Deferred()
     yield wait_to_quit
+    app.terminate()
+
+def main():
+    app = PyKitApp()
+    launch(main_o(app))
+    app.run_loop()
 
 if __name__ == '__main__':
     main()

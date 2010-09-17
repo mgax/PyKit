@@ -3,11 +3,12 @@ import sys
 from monocle import _o, launch
 import monocle.core
 
-from pykit.driver.cocoa import simple_app, create_window, terminate
+from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
 
+@exceptions_to_stderr
 @_o
-def run_tests():
-    window = yield create_window()
+def main_o(app):
+    window = yield app.create_window()
 
     import test_simple_dom
     count = 0
@@ -19,22 +20,17 @@ def run_tests():
             print "E",
             tracebacks.append(monocle.core.format_tb(e))
         else:
-            print ".",
+            sys.stdout.write(".")
+            sys.stdout.flush()
         count += 1
 
     print "\nran %d tests" % count
     for tb in tracebacks:
         print tb
 
-@_o
-def async_main():
-    try:
-        yield run_tests()
-    except Exception, e:
-        print>>sys.stderr, monocle.core.format_tb(e)
-    finally:
-        terminate()
+    app.terminate()
 
 def main():
-    with simple_app():
-        launch(async_main())
+    app = PyKitApp()
+    launch(main_o(app))
+    app.run_loop()

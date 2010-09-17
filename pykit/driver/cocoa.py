@@ -1,5 +1,8 @@
+import sys
 from contextlib import contextmanager
+from functools import wraps
 
+import monocle.core
 from monocle import _o
 
 import Foundation
@@ -88,29 +91,26 @@ def add_event_listener(node, event_name, callback, capture=False):
     handler = EventHandlerWrapper.handlerWithCallback_(callback)
     node.addEventListener___(event_name, handler, capture)
 
-@contextmanager
-def simple_app():
-    init()
-    yield
-    app_loop()
-
-def pykit_entry_point(func):
-    import sys
-    import monocle.core
-    from functools import wraps
-
+def exceptions_to_stderr(func):
     @wraps(func)
+    @_o
     def wrapper(*args, **kwargs):
-        @_o
-        def async():
-            try:
-                yield func(*args, **kwargs)
-            except Exception, e:
-                print>>sys.stderr, monocle.core.format_tb(e)
-            finally:
-                terminate()
-
-        with simple_app():
-            monocle.launch(async())
+        try:
+            yield func(*args, **kwargs)
+        except Exception, e:
+            print>>sys.stderr, monocle.core.format_tb(e)
 
     return wrapper
+
+class PyKitApp(object):
+    def __init__(self):
+        init()
+
+    def run_loop(self):
+        app_loop()
+
+    def create_window(self):
+        return create_window()
+
+    def terminate(self):
+        terminate()
