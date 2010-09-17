@@ -114,6 +114,14 @@ class ScriptWrapper(object):
         priv = self.__pykit_private__
         return "<JavaScript %s>" % (priv.bridge.to_str(priv.js_obj),)
 
+    def __eq__(self, other):
+        # TODO: needs a unit test
+        if isinstance(other, ScriptWrapper):
+            return bool(self.__pykit_private__.js_obj
+                        is other.__pykit_private__.js_obj)
+        else:
+            return False
+
 
 class JsMethod(WebKit.NSObject):
     @classmethod

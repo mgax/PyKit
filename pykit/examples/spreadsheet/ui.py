@@ -18,23 +18,34 @@ class Cell(object):
 
     def on_click(self, this, event):
         # close any edit view
+        if not event.target in (this, this.firstChild):
+            return
         spreadsheet = self.td.closest('table.spreadsheet')
-        spreadsheet.children('form.edit-cell').remove()
+        self.jQ('input.edit-cell', spreadsheet).remove()
 
         # create our own edit box
-        edit_input = self.jQ('<input>').val(self.value)
-        edit_form = self.jQ('<form class="edit-cell">').append(edit_input)
-        edit_form.append(self.jQ('<input type="submit" value="save">'))
-        edit_input.submit(js_function(self.on_edit_submit))
-        self.td.append(edit_form)
+        edit_input = self.jQ('<input class="edit-cell">').val(self.value)
+        edit_input.keydown(js_function(self.on_keydown))
+        edit_input.appendTo(self.td).focus()
 
-    def on_edit_submit(self, this, event):
-        # funny thing: it segfaults before we get here.
+    def on_keydown(self, this, event):
+        if event.keyCode not in (13, 27):
+            return
+
+        if event.keyCode == 13: # enter
+            self.value = self.jQ(this).val()
+
         event.preventDefault()
+        event.stopPropagation()
+        self.jQ(this).remove()
 
     @property
     def value(self):
         return self.td.children('span.value').text()
+
+    @value.setter
+    def value(self, new_value):
+        self.td.children('span.value').text(new_value)
 
 def path_in_module(name):
     return path.join(path.dirname(__file__), name)
