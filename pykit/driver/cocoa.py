@@ -10,7 +10,7 @@ import AppKit
 import WebKit
 from PyObjCTools import AppHelper
 
-from cocoa_dom import ScriptWrapper
+from cocoa_dom import ScriptBridge
 
 def setup_monocle():
     def not_implemented(*args, **kwargs):
@@ -52,12 +52,14 @@ class WebKitWindow(object):
         self.ns_window = ns_window.retain()
         self.webview = webview.retain()
 
+        self.js_bridge = ScriptBridge(self.webview.windowScriptObject())
+
     def is_ready(self):
         return bool(self.webview.mainFrameDocument() is not None)
 
     @property
     def window(self):
-        return ScriptWrapper(self.webview.windowScriptObject())
+        return self.js_bridge.window
 
 @_o
 def create_window(rect=(900, 20, 400, 400)):

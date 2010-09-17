@@ -77,7 +77,8 @@ def test_javascript_methods(ctx):
                     '};')
     ctx.window.call_me_back(call_to_python)
     assert len(calls) == 4
-    assert calls[0][0]._obj is ctx.window._obj
+    assert (calls[0][0].__pykit_private__.js_obj
+            is ctx.window.__pykit_private__.js_obj)
     assert calls[1][1] == (1, 3)
     assert calls[2][0]['n'] == 13
     assert calls[3][1] == ("asdf",)
