@@ -39,10 +39,20 @@ class Cell(object):
 def path_in_module(name):
     return path.join(path.dirname(__file__), name)
 
+def setup_cocoa_app():
+    import AppKit
+    app = AppKit.NSApplication.sharedApplication()
+    app.setActivationPolicy_(0)
+    app.setMainMenu_(AppKit.NSMenu.alloc().initWithTitle_("pykit"))
+    url = AppKit.NSURL.alloc().initFileURLWithPath_(path_in_module("icon.png"))
+    icon = AppKit.NSImage.alloc().initWithContentsOfURL_(url)
+    app.setApplicationIconImage_(icon)
+    app.activateIgnoringOtherApps_(True) # sort of rude
+
 @exceptions_to_stderr
 @_o
 def main_o(app):
-    import monocle.util
+    setup_cocoa_app()
     wkw = yield app.create_window()
     window = wkw.window
 
