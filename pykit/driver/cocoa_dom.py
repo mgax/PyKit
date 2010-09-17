@@ -55,14 +55,6 @@ def wrap_js_objects(obj, bridge, this=None):
         obj = ScriptWrapper(obj, bridge, this)
     return obj
 
-def unwrap_js_objects(obj):
-    """
-    Unwrap any ScriptWrapper objects; everythigng else is passed through.
-    """
-    if isinstance(obj, ScriptWrapper):
-        obj = obj.__pykit_private__.js_obj
-    return obj
-
 # container for private information of a ScriptWrapper instance
 ScriptWrapperPrivate = namedtuple('ScriptWrapperPrivate', 'js_obj bridge this')
 
@@ -97,8 +89,16 @@ class ScriptWrapper(object):
 
     def __call__(self, *args):
         priv = self.__pykit_private__
-        ret = priv.bridge.js_apply(priv.this, priv.js_obj,
-                                   map(unwrap_js_objects, args))
+
+        def unwrap(obj):
+            if isinstance(obj, ScriptWrapper):
+                return obj.__pykit_private__.js_obj
+            elif isinstance(obj, js_function):
+                return obj.callback_for_bridge(priv.bridge)
+            else:
+                return obj
+
+        ret = priv.bridge.js_apply(priv.this, priv.js_obj, map(unwrap, args))
 
         is_exc = ret.valueForKey_('is_exc')
         assert isinstance(is_exc, bool)
@@ -108,32 +108,38 @@ class ScriptWrapper(object):
         else:
             return wrap_js_objects(ret.valueForKey_('out'), priv.bridge)
 
-    def _callback(self, func):
-        wrapper = CallbackWrapper.wrapperWithCallable_scriptWrapper(func, self)
-        return self.__pykit_private__.bridge.make_callback(wrapper)
-
     def __repr__(self):
         priv = self.__pykit_private__
         return "<JavaScript %s>" % (priv.bridge.to_str(priv.js_obj),)
 
-class CallbackWrapper(WebKit.NSObject):
+
+class JsMethod(WebKit.NSObject):
     @classmethod
-    def wrapperWithCallable_scriptWrapper(cls, callback, wrapper):
+    def newWithPyFunc_bridge_(cls, func, bridge):
         self = cls.new()
-        self.callback = callback
-        self.wrapper = wrapper
+        self.func = func
+        self.bridge = bridge
         return self
 
     def calledWithContext_arguments_(self, this, args):
-        bridge = self.wrapper.__pykit_private__.bridge
-        args_length = int(args.valueForKey_('length'))
-        py_args = [ wrap_js_objects(args.webScriptValueAtIndex_(i), bridge)
-                    for i in xrange(args_length) ]
+        arg_n = args.webScriptValueAtIndex_
+        py_args = [ wrap_js_objects(arg_n(i), self.bridge)
+                    for i in xrange(int(args.valueForKey_('length'))) ]
 
-        self.callback(wrap_js_objects(this, bridge), *py_args)
+        self.func(wrap_js_objects(this, self.bridge), *py_args)
 
     def isSelectorExcludedFromWebScript_(self, selector):
         if selector == 'calledWithContext:arguments:':
             return False
         else:
             return True
+
+class js_function(object):
+    """ decorate `func` to be callable from JavaScript """
+
+    def __init__(self, func):
+        self.func = func
+
+    def callback_for_bridge(self, bridge):
+        function_wrapper =  JsMethod.newWithPyFunc_bridge_(self.func, bridge)
+        return bridge.make_callback(function_wrapper)

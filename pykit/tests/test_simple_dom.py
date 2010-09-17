@@ -1,6 +1,8 @@
 from monocle import _o
 import monocle.util
 
+from pykit.driver.cocoa_dom import js_function
+
 @_o
 def test_dom_behaviour(ctx):
     body = ctx.window.document.firstChild.firstChild.nextSibling
@@ -68,7 +70,7 @@ def test_javascript_methods(ctx):
     assert ctx.window.pykittest_callback(10) == 16
 
     calls = []
-    @ctx.window._callback
+    @js_function
     def call_to_python(this, *args):
         calls.append( (this, args) )
     ctx.window.eval('window.call_me_back = function(f) {\n'

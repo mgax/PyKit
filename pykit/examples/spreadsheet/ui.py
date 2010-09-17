@@ -1,6 +1,7 @@
 from os import path
 
 from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
+from pykit.driver.cocoa_dom import js_function
 
 import monocle.core
 from monocle import _o, launch
@@ -18,7 +19,7 @@ def main_o(app):
     wkw = yield app.create_window()
     window = wkw.window
 
-    @window._callback
+    @js_function
     def console_log(this, *args):
         print ' '.join(repr(a) for a in args)
     window['console'] = window.eval('({})')
@@ -40,7 +41,7 @@ def main_o(app):
             tr.appendChild(td)
             td.appendChild(Cell().render(window))
 
-    @window._callback
+    @js_function
     def do_quit(this, *args):
         wait_to_quit.callback(None)
     jQ('<a href="#">').text('quit').click(do_quit).appendTo(jQ('body'))
