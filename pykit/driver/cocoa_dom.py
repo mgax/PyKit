@@ -32,16 +32,17 @@ class ScriptException(Exception):
     pass
 
 class ScriptWrapper(object):
-    def __init__(self, obj, insider=None):
+    def __init__(self, obj, insider=None, call_ctx=None):
         if insider is None:
             insider = JsInsider(obj)
         self.__dict__['_insider'] = insider
         assert isinstance(obj, WebKit.WebScriptObject)
         self.__dict__['_obj'] = obj
+        self.__dict__['_call_ctx'] = call_ctx
 
-    def wrap_if_needed(self, value):
+    def wrap_if_needed(self, value, call_ctx=None):
         if isinstance(value, WebKit.WebScriptObject):
-            value = ScriptWrapper(value, self._insider)
+            value = ScriptWrapper(value, self._insider, call_ctx)
         return value
 
     def __getitem__(self, key):
@@ -56,13 +57,26 @@ class ScriptWrapper(object):
 
     def __getattr__(self, key):
         try:
-            value = self[key]
+            value = self._obj.valueForKey_(key)
         except KeyError:
             raise AttributeError(key)
-        if isinstance(value, ScriptWrapper):
-            if self._insider('type_of', value._obj) == 'function':
-                return ScriptMethodWrapper(self, key)
-        return value
+        else:
+            return self.wrap_if_needed(value, self)
+
+    def __call__(self, *args):
+        js_this = self._call_ctx._obj
+        js_func = self._obj
+        js_args = [ (a._obj if isinstance(a, ScriptWrapper) else a)
+                       for a in args ]
+        ret = self._insider('apply', js_this, js_func, js_args)
+
+        is_exc = ret.valueForKey_('is_exc')
+        assert isinstance(is_exc, bool)
+
+        if is_exc:
+            raise ScriptException(ret.valueForKey_('exc'))
+        else:
+            return self.wrap_if_needed(ret.valueForKey_('out'))
 
     def _callback(self, func):
         wrapper = CallbackWrapper.wrapperWithCallable_scriptWrapper(func, self)
@@ -70,30 +84,6 @@ class ScriptWrapper(object):
 
     def __repr__(self):
         return "<JavaScript %s>" % (self._insider('to_str', self._obj),)
-
-class ScriptMethodWrapper(object):
-    def __init__(self, obj_wrapper, method_name):
-        self.obj_wrapper = obj_wrapper
-        self.method_name = method_name
-
-    def __call__(self, *args):
-        def unwrap(arg):
-            if isinstance(arg, ScriptWrapper):
-                return arg._obj
-            elif isinstance(arg, ScriptMethodWrapper):
-                return arg.obj_wrapper[arg.method_name]._obj
-            else:
-                return arg
-        unwrapped_args = map(unwrap, args)
-        ctx = self.obj_wrapper
-        func = ctx[self.method_name]._obj
-        ret = ctx._insider('apply', ctx._obj, func, unwrapped_args)
-        is_exc = ret.valueForKey_('is_exc')
-        assert isinstance(is_exc, bool)
-        if is_exc:
-            raise ScriptException(ret.valueForKey_('exc'))
-        else:
-            return ctx.wrap_if_needed(ret.valueForKey_('out'))
 
 INSIDER_JS = """({
     type_of: function(value) { return typeof(value); },
