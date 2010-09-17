@@ -12,15 +12,29 @@ Position = namedtuple('Position', 'x y')
 class Cell(object):
     def __init__(self, position, jQ):
         self.position = position
-        self.ui = jQ('<td>hi!</td>')
-        self.ui.click(js_function(self.on_click))
+        self.td = jQ('<td><span class="value">hi!</span></td>')
+        self.td.click(js_function(self.on_click))
+        self.jQ = jQ
 
     def on_click(self, this, event):
-        print "clicked!", self.position, self.value
+        # close any edit view
+        spreadsheet = self.td.closest('table.spreadsheet')
+        spreadsheet.children('form.edit-cell').remove()
+
+        # create our own edit box
+        edit_input = self.jQ('<input>').val(self.value)
+        edit_form = self.jQ('<form class="edit-cell">').append(edit_input)
+        edit_form.append(self.jQ('<input type="submit" value="save">'))
+        edit_input.submit(js_function(self.on_edit_submit))
+        self.td.append(edit_form)
+
+    def on_edit_submit(self, this, event):
+        # funny thing: it segfaults before we get here.
+        event.preventDefault()
 
     @property
     def value(self):
-        return self.ui.text()
+        return self.td.children('span.value').text()
 
 def path_in_module(name):
     return path.join(path.dirname(__file__), name)
@@ -50,7 +64,7 @@ def main_o(app):
         tr = jQ('<tr>').appendTo(table)
         for y in range(3):
             cell = Cell(Position(x, y), jQ)
-            cell.ui.appendTo(tr)
+            cell.td.appendTo(tr)
 
     @js_function
     def do_quit(this, *args):
