@@ -6,3 +6,7 @@ table.spreadsheet td {
     min-width: 100px;
     border: 1px solid #999;
 }
+
+table.spreadsheet td input.edit-cell {
+    position: absolute;
+}

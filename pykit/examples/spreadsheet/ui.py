@@ -1,5 +1,6 @@
 from os import path
 from collections import namedtuple
+from decimal import Decimal as D
 
 from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
 from pykit.driver.cocoa_dom import js_function
@@ -9,12 +10,21 @@ from monocle import _o, launch
 
 Position = namedtuple('Position', 'x y')
 
+def parse(txt):
+    if txt[0] == '=':
+        return "[formula]"
+    try:
+        return D(txt)
+    except ValueError:
+        return txt
+
 class Cell(object):
     def __init__(self, position, jQ):
         self.position = position
-        self.td = jQ('<td><span class="value">hi!</span></td>')
+        self.td = jQ('<td><span class="value"></span></td>')
         self.td.click(js_function(self.on_click))
         self.jQ = jQ
+        self.value = ""
 
     def on_click(self, this, event):
         # close any edit view
@@ -26,14 +36,14 @@ class Cell(object):
         # create our own edit box
         edit_input = self.jQ('<input class="edit-cell">').val(self.value)
         edit_input.keydown(js_function(self.on_keydown))
-        edit_input.appendTo(self.td).focus()
+        edit_input.prependTo(self.td).focus()
 
     def on_keydown(self, this, event):
         if event.keyCode not in (13, 27):
             return
 
         if event.keyCode == 13: # enter
-            self.value = self.jQ(this).val()
+            self.value = parse(self.jQ(this).val())
 
         event.preventDefault()
         event.stopPropagation()
@@ -41,11 +51,15 @@ class Cell(object):
 
     @property
     def value(self):
-        return self.td.children('span.value').text()
+        return self._value
 
     @value.setter
     def value(self, new_value):
-        self.td.children('span.value').text(new_value)
+        self._value = new_value
+        self.update_ui()
+
+    def update_ui(self):
+        self.td.children('span.value').text(unicode(self._value) or u"\u00a0")
 
 def path_in_module(name):
     return path.join(path.dirname(__file__), name)
