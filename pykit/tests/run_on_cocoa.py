@@ -13,7 +13,10 @@ def main_o(app):
     import test_simple_dom
     count = 0
     tracebacks = []
-    for dom_test in test_simple_dom.all_tests:
+    for name in dir(test_simple_dom):
+        if not name.startswith('test'):
+            continue
+        dom_test = getattr(test_simple_dom, name)
         try:
             yield dom_test(window)
         except Exception, e:
@@ -24,9 +27,14 @@ def main_o(app):
             sys.stdout.flush()
         count += 1
 
-    print "\nran %d tests" % count
     for tb in tracebacks:
         print tb
+
+    if tracebacks:
+        result = "%d errors" % len(tracebacks)
+    else:
+        result = "pass"
+    print "\nran %d tests: %s" % (count, result)
 
     app.terminate()
 

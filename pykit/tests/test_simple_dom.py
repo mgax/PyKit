@@ -1,5 +1,4 @@
 from monocle import _o
-import monocle.util
 
 from pykit.driver.cocoa_dom import js_function
 
@@ -7,7 +6,6 @@ from pykit.driver.cocoa_dom import js_function
 def test_dom_behaviour(ctx):
     body = ctx.window.document.firstChild.firstChild.nextSibling
     body.innerHTML = "<div>hello <em>world!</em></div>"
-    yield monocle.util.sleep(.5)
     div = body.firstChild
     assert div.nodeName == 'DIV'
     assert div.innerText == "hello world!"
@@ -167,8 +165,3 @@ def test_javascript_eval(ctx):
         assert e.args[0] == 'SyntaxError: Parse error'
     else:
         assert False, "should raise exception"
-
-all_tests = [test_dom_behaviour, test_javascript,
-             test_javascript_properties, test_javascript_methods,
-             test_exceptions_from_javascript, test_exceptions_from_python,
-             test_javascript_method_arguments, test_javascript_eval]
