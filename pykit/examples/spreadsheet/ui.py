@@ -45,7 +45,7 @@ class Cell(object):
 
     @property
     def computed_value(self):
-        if self._value.startswith('='):
+        if self.is_formula:
             return eval(self._value[1:], {'S': self.sheet})
         else:
             try:
@@ -60,6 +60,7 @@ class Cell(object):
     @value.setter
     def value(self, new_value):
         self._value = new_value
+        self.is_formula = (new_value.startswith('='))
         self.update_ui()
 
     def update_ui(self):
@@ -70,7 +71,7 @@ class Cell(object):
             err = html_quote(repr(e))
             display = u'<span class="cell-error">%s</span>' % err
         else:
-            if self._value.startswith('='):
+            if self.is_formula:
                 display = u'<span class="computed-cell">%s</span>' % display
             elif isinstance(computed_value, Decimal):
                 display = u'<span class="numeric-cell">%s</span>' % display
