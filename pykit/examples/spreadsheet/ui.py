@@ -21,7 +21,7 @@ class Cell(object):
 
     def on_click(self, this, event):
         # close any edit view
-        if not event.target in (this, this.firstChild):
+        if self.jQ(event.target).filter('input.edit-cell').length:
             return
         spreadsheet = self.td.closest('table.spreadsheet')
         self.jQ('input.edit-cell', spreadsheet).remove()
