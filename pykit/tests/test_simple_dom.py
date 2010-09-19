@@ -91,7 +91,7 @@ def test_javascript_methods(ctx):
     assert calls[3][1] == ("asdf",)
 
 @_o
-def test_javascript_method_exceptions(ctx):
+def test_exceptions_from_javascript(ctx):
     ctx.window.eval('window.crashme = function(){ something.non.existent; }')
     try:
         ctx.window.crashme()
@@ -101,6 +101,26 @@ def test_javascript_method_exceptions(ctx):
         assert e.args[0] == "ReferenceError: Can't find variable: something"
     else:
         assert False, "should raise exception"
+
+@_o
+def test_exceptions_from_python(ctx):
+    @js_function
+    def crash_py(this):
+        raise ValueError("my error text")
+
+    import sys
+    from StringIO import StringIO
+    _stderr = sys.stderr
+    try:
+        sys.stderr = StringIO()
+        ret = ctx.window.eval('(function(x) { return x(); })')(crash_py)
+        assert ret is None
+        err_out = sys.stderr.getvalue()
+    finally:
+        sys.stderr = _stderr
+
+    assert "ValueError" in err_out
+    assert "my error text" in err_out
 
 @_o
 def test_javascript_method_arguments(ctx):
@@ -148,6 +168,7 @@ def test_javascript_eval(ctx):
     else:
         assert False, "should raise exception"
 
-all_tests = [test_dom_behaviour, test_javascript, test_javascript_properties,
-             test_javascript_methods, test_javascript_method_exceptions,
+all_tests = [test_dom_behaviour, test_javascript,
+             test_javascript_properties, test_javascript_methods,
+             test_exceptions_from_javascript, test_exceptions_from_python,
              test_javascript_method_arguments, test_javascript_eval]

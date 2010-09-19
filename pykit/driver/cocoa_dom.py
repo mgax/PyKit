@@ -138,7 +138,6 @@ class JsMethod(WebKit.NSObject):
         try:
             self.func(wrap_js_objects(this, self.bridge), *py_args)
         except:
-            # TODO: needs a unit test
             import traceback; traceback.print_exc()
 
     def isSelectorExcludedFromWebScript_(self, selector):
