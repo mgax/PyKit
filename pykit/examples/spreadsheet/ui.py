@@ -63,10 +63,11 @@ class Cell(object):
         try:
             display = html_quote(unicode(self.computed_value))
         except Exception, e:
-            display = '<span class="cell-error">%s</span>' % unicode(e)
+            err = html_quote(repr(e))
+            display = u'<span class="cell-error">%s</span>' % err
         else:
             if self._value.startswith('='):
-                display = '<span class="computed-cell">%s</span>' % display
+                display = u'<span class="computed-cell">%s</span>' % display
         self.td.children('span.value').html(display or u"\u00a0")
 
 class Sheet(object):
