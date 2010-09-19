@@ -33,6 +33,11 @@ def test_javascript(ctx):
 
     assert repr(ctx.window.eval('[4, 123]')) == '<JavaScript 4,123>'
 
+    # object comparison: object equal to itself; different objects not equal
+    d = ctx.window.eval('({a: {}, b: {}})')
+    assert d['a'] == d['a']
+    assert d['a'] != d['b']
+
 @_o
 def test_javascript_properties(ctx):
     js_eval = ctx.window.eval
