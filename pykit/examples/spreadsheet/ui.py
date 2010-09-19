@@ -10,21 +10,27 @@ from monocle import _o, launch
 
 Position = namedtuple('Position', 'x y')
 
-def parse(txt):
-    if txt[0] == '=':
-        return "[formula]"
-    try:
-        return D(txt)
-    except ValueError:
-        return txt
+class Formula(object):
+    def __init__(self, txt):
+        self.txt = txt
+
+    def calculate(self, sheet):
+        try:
+            return unicode(eval(self.txt[1:], {'S': sheet}))
+        except Exception, e:
+            return u"[error: %s]" % unicode(e)
+
+    def __unicode__(self):
+        return self.txt
 
 class Cell(object):
-    def __init__(self, position, jQ):
+    def __init__(self, position, sheet, jQ):
         self.position = position
         self.td = jQ('<td><span class="value"></span></td>')
         self.td.click(js_function(self.on_click))
         self.jQ = jQ
         self.value = ""
+        self.sheet = sheet
 
     def on_click(self, this, event):
         # close any edit view
@@ -34,7 +40,8 @@ class Cell(object):
         self.jQ('input.edit-cell', spreadsheet).remove()
 
         # create our own edit box
-        edit_input = self.jQ('<input class="edit-cell">').val(self.value)
+        edit_input = self.jQ('<input class="edit-cell">')
+        edit_input.val(unicode(self.value))
         edit_input.keydown(js_function(self.on_keydown))
         edit_input.prependTo(self.td).focus()
 
@@ -43,7 +50,7 @@ class Cell(object):
             return
 
         if event.keyCode == 13: # enter
-            self.value = parse(self.jQ(this).val())
+            self.value = self.jQ(this).val()
 
         event.preventDefault()
         event.stopPropagation()
@@ -55,11 +62,25 @@ class Cell(object):
 
     @value.setter
     def value(self, new_value):
-        self._value = new_value
-        self.update_ui()
+        if new_value.startswith('='):
+            self._value = Formula(new_value)
+        else:
+            self._value = new_value
+        try:
+            self.update_ui()
+        except:
+            print 'fail'
 
     def update_ui(self):
-        self.td.children('span.value').text(unicode(self._value) or u"\u00a0")
+        if isinstance(self._value, Formula):
+            display = self._value.calculate(self.sheet)
+        else:
+            display = unicode(self._value)
+        print repr(display)
+        self.td.children('span.value').text(display or u"\u00a0")
+
+class Sheet(object):
+    pass
 
 def path_in_module(name):
     return path.join(path.dirname(__file__), name)
@@ -94,11 +115,13 @@ def main_o(app):
     with open(path_in_module('style.css'), 'r') as style_css:
         jQ('head').append("<style>" + style_css.read() + "</style>")
 
+    sheet = Sheet()
+
     table = jQ('<table class="spreadsheet">').appendTo(jQ("body"))
     for x in range(3):
         tr = jQ('<tr>').appendTo(table)
         for y in range(3):
-            cell = Cell(Position(x, y), jQ)
+            cell = Cell(Position(x, y), sheet, jQ)
             cell.td.appendTo(tr)
 
     @js_function
