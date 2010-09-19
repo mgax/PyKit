@@ -1,5 +1,5 @@
 from os import path
-from decimal import Decimal as D
+from decimal import InvalidOperation, Decimal
 
 from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
 from pykit.driver.cocoa_dom import js_function
@@ -48,7 +48,10 @@ class Cell(object):
         if self._value.startswith('='):
             return eval(self._value[1:], {'S': self.sheet})
         else:
-            return self._value
+            try:
+                return Decimal(self._value)
+            except InvalidOperation:
+                return self._value
 
     @property
     def value(self):
@@ -61,13 +64,16 @@ class Cell(object):
 
     def update_ui(self):
         try:
-            display = html_quote(unicode(self.computed_value))
+            computed_value = self.computed_value
+            display = html_quote(unicode(computed_value))
         except Exception, e:
             err = html_quote(repr(e))
             display = u'<span class="cell-error">%s</span>' % err
         else:
             if self._value.startswith('='):
                 display = u'<span class="computed-cell">%s</span>' % display
+            elif isinstance(computed_value, Decimal):
+                display = u'<span class="numeric-cell">%s</span>' % display
         self.td.children('span.value').html(display or u"\u00a0")
 
 class Sheet(object):

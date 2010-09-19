@@ -11,10 +11,18 @@ table.spreadsheet td input.edit-cell {
     position: absolute;
 }
 
+table.spreadsheet td {
+    color: #444;
+}
+
 table.spreadsheet td span.cell-error {
     color: red;
 }
 
 table.spreadsheet td span.computed-cell {
     color: green;
+}
+
+table.spreadsheet td span.numeric-cell {
+    color: blue;
 }
