@@ -10,3 +10,11 @@ table.spreadsheet td {
 table.spreadsheet td input.edit-cell {
     position: absolute;
 }
+
+table.spreadsheet td span.cell-error {
+    color: red;
+}
+
+table.spreadsheet td span.computed-cell {
+    color: green;
+}

@@ -1,5 +1,4 @@
 from os import path
-from collections import namedtuple
 from decimal import Decimal as D
 
 from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
@@ -8,24 +7,12 @@ from pykit.driver.cocoa_dom import js_function
 import monocle.core
 from monocle import _o, launch
 
-Position = namedtuple('Position', 'x y')
-
-class Formula(object):
-    def __init__(self, txt):
-        self.txt = txt
-
-    def calculate(self, sheet):
-        try:
-            return unicode(eval(self.txt[1:], {'S': sheet}))
-        except Exception, e:
-            return u"[error: %s]" % unicode(e)
-
-    def __unicode__(self):
-        return self.txt
+def html_quote(s):
+    return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 class Cell(object):
-    def __init__(self, position, sheet, jQ):
-        self.position = position
+    def __init__(self, x, y, sheet, jQ):
+        self.x, self.y = x, y
         self.td = jQ('<td><span class="value"></span></td>')
         self.td.click(js_function(self.on_click))
         self.jQ = jQ
@@ -57,30 +44,41 @@ class Cell(object):
         self.jQ(this).remove()
 
     @property
+    def computed_value(self):
+        if self._value.startswith('='):
+            return eval(self._value[1:], {'S': self.sheet})
+        else:
+            return self._value
+
+    @property
     def value(self):
         return self._value
 
     @value.setter
     def value(self, new_value):
-        if new_value.startswith('='):
-            self._value = Formula(new_value)
-        else:
-            self._value = new_value
-        try:
-            self.update_ui()
-        except:
-            print 'fail'
+        self._value = new_value
+        self.update_ui()
 
     def update_ui(self):
-        if isinstance(self._value, Formula):
-            display = self._value.calculate(self.sheet)
+        try:
+            display = html_quote(unicode(self.computed_value))
+        except Exception, e:
+            display = '<span class="cell-error">%s</span>' % unicode(e)
         else:
-            display = unicode(self._value)
-        print repr(display)
-        self.td.children('span.value').text(display or u"\u00a0")
+            if self._value.startswith('='):
+                display = '<span class="computed-cell">%s</span>' % display
+        self.td.children('span.value').html(display or u"\u00a0")
 
 class Sheet(object):
-    pass
+    def __init__(self):
+        self.cells = {}
+
+    def new_cell(self, x, y, **kwargs):
+        c = self.cells[x,y] = Cell(x=x, y=y, **kwargs)
+        return c
+
+    def __getitem__(self, key):
+        return self.cells[key].computed_value
 
 def path_in_module(name):
     return path.join(path.dirname(__file__), name)
@@ -121,8 +119,7 @@ def main_o(app):
     for x in range(3):
         tr = jQ('<tr>').appendTo(table)
         for y in range(3):
-            cell = Cell(Position(x, y), sheet, jQ)
-            cell.td.appendTo(tr)
+            sheet.new_cell(x=x, y=y, sheet=sheet, jQ=jQ).td.appendTo(tr)
 
     @js_function
     def do_quit(this, *args):
