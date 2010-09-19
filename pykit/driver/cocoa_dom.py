@@ -136,7 +136,11 @@ class JsMethod(WebKit.NSObject):
         py_args = [ wrap_js_objects(arg_n(i), self.bridge)
                     for i in xrange(int(args.valueForKey_('length'))) ]
 
-        self.func(wrap_js_objects(this, self.bridge), *py_args)
+        try:
+            self.func(wrap_js_objects(this, self.bridge), *py_args)
+        except:
+            # TODO: needs a unit test
+            import traceback; traceback.print_exc()
 
     def isSelectorExcludedFromWebScript_(self, selector):
         return bool(selector != 'calledWithContext:arguments:')
