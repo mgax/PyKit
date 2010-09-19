@@ -70,12 +70,48 @@ class Cell(object):
         self.td.children('span.value').html(display or u"\u00a0")
 
 class Sheet(object):
-    def __init__(self):
+    def __init__(self, jQ):
+        self.jQ = jQ
         self.cells = {}
 
-    def new_cell(self, x, y, **kwargs):
-        c = self.cells[x,y] = Cell(x=x, y=y, **kwargs)
-        return c
+        self.table = jQ('<table class="spreadsheet">').appendTo(jQ("body"))
+        self._width = 0
+        self._height = 0
+
+    def resize_width(self, new_width):
+        assert new_width >= 0
+        if new_width > self._width:
+            for y in range(self._height):
+                tr = self.jQ('tr:nth-child(%d)' % (y+1), self.table)
+                for x in range(self._width, new_width):
+                    self._new_cell(x, y).td.appendTo(tr)
+        else:
+            for y in range(self._height):
+                tr = self.jQ('tr:nth-child(%d)' % (y+1), self.table)
+                for x in reversed(range(new_width, self._width)):
+                    print "del", x, y
+                    del self.cells[x,y]
+                    self.jQ('td:nth-child(%d)' % (x+1), tr).remove()
+        self._width = new_width
+
+    def resize_height(self, new_height):
+        assert new_height >= 0
+        if new_height > self._height:
+            for y in range(self._height, new_height):
+                tr = self.jQ('<tr>').appendTo(self.table)
+                for x in range(self._width):
+                    self._new_cell(x, y).td.appendTo(tr)
+        else:
+            for y in reversed(range(new_height, self._height)):
+                for x in range(self._width):
+                    print "del", x, y
+                    del self.cells[x,y]
+                self.jQ('tr:nth-child(%d)' % (y+1), self.table).remove()
+        self._height = new_height
+
+    def _new_cell(self, x, y):
+        cell = self.cells[x,y] = Cell(x, y, self, self.jQ)
+        return cell
 
     def __getitem__(self, key):
         return self.cells[key].computed_value
@@ -113,20 +149,28 @@ def main_o(app):
     with open(path_in_module('style.css'), 'r') as style_css:
         jQ('head').append("<style>" + style_css.read() + "</style>")
 
-    sheet = Sheet()
+    buttons_div = jQ('<div>').appendTo(jQ('body'))
+    def button(text, callback):
+        @js_function
+        def on_click(this, event):
+            event.preventDefault()
+            callback()
+        button_a = jQ('<a href="#">').text(text).click(on_click)
+        buttons_div.append('[', button_a, ']')
 
-    table = jQ('<table class="spreadsheet">').appendTo(jQ("body"))
-    for x in range(3):
-        tr = jQ('<tr>').appendTo(table)
-        for y in range(3):
-            sheet.new_cell(x=x, y=y, sheet=sheet, jQ=jQ).td.appendTo(tr)
+    sheet = Sheet(jQ)
+    sheet.table.appendTo(jQ('body'))
+    sheet.resize_width(4)
+    sheet.resize_height(10)
 
-    @js_function
-    def do_quit(this, *args):
-        wait_to_quit.callback(None)
-    jQ('body').prepend(jQ('<a href="#">').text('quit').click(do_quit), '<br>')
+    button('+ col', lambda: sheet.resize_width(sheet._width + 1))
+    button('- col', lambda: sheet.resize_width(sheet._width - 1))
+    button('+ row', lambda: sheet.resize_height(sheet._height + 1))
+    button('- row', lambda: sheet.resize_height(sheet._height - 1))
 
     wait_to_quit = monocle.core.Deferred()
+    button('quit', lambda: wait_to_quit.callback(None))
+
     yield wait_to_quit
     app.terminate()
 
