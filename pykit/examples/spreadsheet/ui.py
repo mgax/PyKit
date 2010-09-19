@@ -97,7 +97,7 @@ def setup_cocoa_app():
 @_o
 def main_o(app):
     setup_cocoa_app()
-    wkw = yield app.create_window()
+    wkw = yield app.create_window(size=(500, 300), position=(100, 20))
     window = wkw.window
 
     @js_function

@@ -62,9 +62,9 @@ class WebKitWindow(object):
         return self.js_bridge.window
 
 @_o
-def create_window(rect=(900, 20, 400, 400)):
+def create_window(size=(400, 400), position=(900, 20)):
     w = WebKitWindow()
-    w._set_up_window(rect)
+    w._set_up_window(position + size)
 
     import monocle.util
     while not w.is_ready():
@@ -107,8 +107,8 @@ class PyKitApp(object):
     def run_loop(self):
         app_loop()
 
-    def create_window(self):
-        return create_window()
+    def create_window(self, **kwargs):
+        return create_window(**kwargs)
 
     def terminate(self):
         terminate()
