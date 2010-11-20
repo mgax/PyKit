@@ -70,7 +70,7 @@ def create_window(size=(400, 400), position=(900, 20)):
     while not w.is_ready():
         yield monocle.util.sleep(.1)
 
-    yield w # return
+    yield monocle.core.Return(w)
 
 def app_loop():
     AppHelper.runEventLoop()
