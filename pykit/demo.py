@@ -20,15 +20,15 @@ def demo_window(app):
 @_o
 def main():
     env = {'__name__': '__console__', '__doc__': None}
-    launch(repl(env))
-    launch(demo_window())
+    launch(repl, env)
+    launch(demo_window)
     yield monocle.util.sleep(2)
 
 def main():
     app = PyKitApp()
     env = {'__name__': '__console__', '__doc__': None}
-    launch(repl(env))
-    launch(demo_window(app))
+    launch(repl, env)
+    launch(demo_window, app)
     app.run_loop()
 
 if __name__ == '__main__':

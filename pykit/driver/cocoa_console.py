@@ -63,7 +63,7 @@ def setup_input():
     def handle_line(observer, data):
         if not data:
             return quit()
-        line_input.fire(data)
+        line_input.send(data)
 
     def handle_error(err):
         sys.stdout.write("error!\n")
@@ -71,7 +71,7 @@ def setup_input():
     FileObserver.alloc().initWithFileDescriptor_readCallback_errorCallback_(
         sys.stdin.fileno(), handle_line, handle_error).retain()
 
-    return line_input.wait
+    return line_input.recv
 
 from monocle import _o
 

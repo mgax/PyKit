@@ -184,7 +184,7 @@ def main_o(app):
 
 def main():
     app = PyKitApp()
-    launch(main_o(app))
+    launch(main_o, app)
     app.run_loop()
 
 if __name__ == '__main__':
