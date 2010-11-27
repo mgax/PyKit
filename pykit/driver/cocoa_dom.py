@@ -89,18 +89,19 @@ class ScriptWrapper(object):
         else:
             return wrap_js_objects(value, priv.bridge, priv.js_obj)
 
+    def _unwrap(self, obj):
+        if isinstance(obj, ScriptWrapper):
+            return obj.__pykit_private__.js_obj
+        elif isinstance(obj, js_function):
+            return obj.callback_for_bridge(self.__pykit_private__.bridge)
+        else:
+            return obj
+
     def __call__(self, *args):
         priv = self.__pykit_private__
 
-        def unwrap(obj):
-            if isinstance(obj, ScriptWrapper):
-                return obj.__pykit_private__.js_obj
-            elif isinstance(obj, js_function):
-                return obj.callback_for_bridge(priv.bridge)
-            else:
-                return obj
-
-        ret = priv.bridge.js_apply(priv.this, priv.js_obj, map(unwrap, args))
+        ret = priv.bridge.js_apply(priv.this, priv.js_obj,
+                                   map(self._unwrap, args))
 
         is_exc = ret.valueForKey_('is_exc')
         assert isinstance(is_exc, bool)
@@ -136,7 +137,9 @@ class JsMethod(WebKit.NSObject):
                     for i in xrange(int(args.valueForKey_('length'))) ]
 
         try:
-            return self.func(wrap_js_objects(this, self.bridge), *py_args)
+            wrapped_this = wrap_js_objects(this, self.bridge)
+            ret = self.func(wrapped_this, *py_args)
+            return wrapped_this._unwrap(ret)
         except:
             import traceback; traceback.print_exc()
 

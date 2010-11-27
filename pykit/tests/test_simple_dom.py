@@ -88,7 +88,7 @@ def test_javascript_methods(ctx):
     assert calls[2][0]['n'] == 13
     assert calls[3][1] == ("asdf",)
 
-    values = [15, 'asdf', {'x': [1,2]}]
+    values = [15, 'asdf', js_function(lambda this: 5), {'x': [1,2]}]
     @js_function
     def python_returns(this):
         return values.pop(0)
@@ -98,8 +98,9 @@ def test_javascript_methods(ctx):
     ctx.window.eval('window.pr_output = ""')
     ctx.window.eval('pr_output += "" + (python_returns()-2)')
     ctx.window.eval('pr_output += ", " + (python_returns().substr(1,2))')
+    ctx.window.eval('pr_output += ", " + (python_returns()())')
     #ctx.window.eval('pr_output += ", " + (python_returns().x[0])')
-    assert ctx.window['pr_output'] == '13, sd'
+    assert ctx.window['pr_output'] == '13, sd, 5'
 
 @_o
 def test_exceptions_from_javascript(ctx):
