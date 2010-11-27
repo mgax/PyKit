@@ -18,7 +18,7 @@ INSIDER_JS = """({
     },
     make_callback: function(wrapper) {
         var callback = function() {
-            wrapper.calledWithContext_arguments_(this, arguments);
+            return wrapper.calledWithContext_arguments_(this, arguments);
         };
         return callback;
     }
@@ -136,7 +136,7 @@ class JsMethod(WebKit.NSObject):
                     for i in xrange(int(args.valueForKey_('length'))) ]
 
         try:
-            self.func(wrap_js_objects(this, self.bridge), *py_args)
+            return self.func(wrap_js_objects(this, self.bridge), *py_args)
         except:
             import traceback; traceback.print_exc()
 
