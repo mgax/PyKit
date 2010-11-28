@@ -5,20 +5,13 @@ import monocle.core
 
 from pykit.driver.cocoa import PyKitApp, exceptions_to_stderr
 
-@exceptions_to_stderr
 @_o
-def main_o(app):
-    window = yield app.create_window()
-
-    import test_simple_dom
+def run_tests(tests_to_run, *args):
     count = 0
     tracebacks = []
-    for name in dir(test_simple_dom):
-        if not name.startswith('test'):
-            continue
-        dom_test = getattr(test_simple_dom, name)
+    for test in tests_to_run:
         try:
-            yield dom_test(window)
+            yield test(*args)
         except Exception, e:
             print "E",
             tracebacks.append(monocle.core.format_tb(e))
@@ -35,6 +28,20 @@ def main_o(app):
     else:
         result = "pass"
     print "\nran %d tests: %s" % (count, result)
+
+@exceptions_to_stderr
+@_o
+def main_o(app):
+    window = yield app.create_window()
+
+    def all_tests():
+        import test_simple_dom
+        for name in dir(test_simple_dom):
+            if not name.startswith('test'):
+                continue
+            yield getattr(test_simple_dom, name)
+
+    yield run_tests(all_tests(), window)
 
     app.terminate()
 
