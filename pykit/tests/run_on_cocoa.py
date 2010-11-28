@@ -1,4 +1,5 @@
 import sys
+import traceback
 
 from monocle import _o, launch
 import monocle.core
@@ -13,8 +14,12 @@ def run_tests(tests_to_run, *args):
         try:
             yield test(*args)
         except Exception, e:
+            if hasattr(e, '_monocle'):
+                tb = monocle.core.format_tb(e)
+            else:
+                tb = traceback.format_exc()
+            tracebacks.append(tb)
             print "E",
-            tracebacks.append(monocle.core.format_tb(e))
         else:
             sys.stdout.write(".")
             sys.stdout.flush()
